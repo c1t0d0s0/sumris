@@ -138,6 +138,13 @@ html, body {
     margin: 0 0 15px 0;
 }
 
+.final-score-text {
+    font-size: 1.5em;
+    color: #4dff4d; /* Bright green */
+    margin: 0 0 20px 0;
+    font-weight: bold;
+}
+
 #game-clear-screen h2 {
     color: #4dff4d;
 }

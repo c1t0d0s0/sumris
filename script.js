@@ -31,6 +31,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let nextBlock = null;
     let score = 0;
     let gameOver = false;
+    let isAnimating = false;
+    let blinkingBlocks = new Set();
     let gameLoop;
     let fallSpeed = 1000; // ms
 
@@ -97,9 +99,45 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function animateAndClearBlocks(blocksToClear) {
+        isAnimating = true;
+        let blinkCount = 0;
+        const totalBlinks = 4; // Must be even to end in a visible state
+        const blinkInterval = 100; // ms
+
+        const blinker = setInterval(() => {
+            blinkCount++;
+            if (blinkingBlocks.size > 0) {
+                blinkingBlocks.clear();
+            } else {
+                blinkingBlocks = new Set(blocksToClear);
+            }
+            drawBoard();
+
+            if (blinkCount >= totalBlinks) {
+                clearInterval(blinker);
+                blinkingBlocks.clear();
+                
+                blocksToClear.forEach(b => {
+                    const [y, x] = b.split(',').map(Number);
+                    board[y][x] = 0;
+                });
+
+                applyGravity();
+                checkForGameClear();
+                draw();
+                isAnimating = false;
+            }
+        }, blinkInterval);
+    }
+
     function checkForClears() {
-        let blocksToClear = new Set();
-        let totalScoreFromClear = 0;
+        if (isAnimating) return;
+        
+        const verticalBlocksToClear = new Set();
+        const horizontalBlocksToClear = new Set();
+        let verticalScore = 0;
+        let horizontalScore = 0;
 
         // Vertical Check
         for (let x = 0; x < COLS; x++) {
@@ -113,8 +151,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (board[y][x] === 0 || y === ROWS - 1) {
                     if (currentSum > 0 && currentSum % 10 === 0) {
-                        totalScoreFromClear += currentSum * sumBlocks.length;
-                        sumBlocks.forEach(b => blocksToClear.add(`${b.y},${b.x}`));
+                        verticalScore += currentSum * sumBlocks.length;
+                        sumBlocks.forEach(b => verticalBlocksToClear.add(`${b.y},${b.x}`));
                     }
                     currentSum = 0;
                     sumBlocks = [];
@@ -133,8 +171,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 if (board[y][x] === 0 || x === COLS - 1) {
                     if (currentSum > 0 && currentSum % 10 === 0) {
-                       totalScoreFromClear += currentSum * sumBlocks.length;
-                       sumBlocks.forEach(b => blocksToClear.add(`${b.y},${b.x}`));
+                       horizontalScore += currentSum * sumBlocks.length;
+                       sumBlocks.forEach(b => horizontalBlocksToClear.add(`${b.y},${b.x}`));
                     }
                     currentSum = 0;
                     sumBlocks = [];
@@ -142,14 +180,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        if (blocksToClear.size > 0) {
-            blocksToClear.forEach(b => {
-                const [y, x] = b.split(',').map(Number);
-                board[y][x] = 0;
-            });
+        const intersection = new Set([...verticalBlocksToClear].filter(b => horizontalBlocksToClear.has(b)));
+        const isCrossClear = intersection.size > 0;
+        
+        const allBlocksToClear = new Set([...verticalBlocksToClear, ...horizontalBlocksToClear]);
+
+        if (allBlocksToClear.size > 0) {
+            let totalScoreFromClear = verticalScore + horizontalScore;
+            if (isCrossClear) {
+                totalScoreFromClear *= 3;
+            }
             updateScore(totalScoreFromClear);
-            applyGravity();
-            checkForGameClear();
+            animateAndClearBlocks(allBlocksToClear);
         }
     }
     
@@ -168,6 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function checkForGameClear() {
         const isBoardEmpty = board.every(row => row.every(cell => cell === 0));
         if (isBoardEmpty) {
+            document.getElementById('final-score').textContent = score;
             gameClearScreen.style.display = 'flex';
             clearInterval(gameLoop);
             gameOver = true;
@@ -210,7 +253,9 @@ document.addEventListener('DOMContentLoaded', () => {
             for (let x = 0; x < COLS; x++) {
                 if (board[y][x] > 0) {
                     const number = board[y][x];
-                    const tempBlock = { x, y, number, color: COLORS[number] };
+                    const isBlinking = blinkingBlocks.has(`${y},${x}`);
+                    const color = isBlinking ? '#FFFFFF' : COLORS[number]; // Blink to white
+                    const tempBlock = { x, y, number, color };
                     drawBlock(ctx, tempBlock);
                 }
             }
@@ -230,7 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function moveCurrentBlock(dx) {
-        if (gameOver || !currentBlock) return;
+        if (gameOver || !currentBlock || isAnimating) return;
         const newX = currentBlock.x + dx;
         if (isValidMove(currentBlock, newX, currentBlock.y)) {
             currentBlock.x = newX;
@@ -238,7 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function dropBlock() {
-        if (gameOver || !currentBlock) return;
+        if (gameOver || !currentBlock || isAnimating) return;
         const newY = currentBlock.y + 1;
         if (isValidMove(currentBlock, currentBlock.x, newY)) {
             currentBlock.y = newY;
@@ -248,7 +293,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function update() {
-        if (gameOver) return;
+        if (gameOver || isAnimating) return;
         dropBlock();
         draw();
     }
@@ -260,7 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleKeyPress(e) {
-        if (gameOver) return;
+        if (gameOver || isAnimating) return;
         switch (e.key) {
             case 'ArrowLeft':
                 moveCurrentBlock(-1);
@@ -333,6 +378,36 @@ document.addEventListener('DOMContentLoaded', () => {
         // Delay the initial resize slightly to allow the browser to finalize the layout
         setTimeout(resizeCanvas, 50);
 
+        // --- Touch Controls ---
+
+        // Prevent pinch-to-zoom (most reliable method)
+        document.addEventListener('touchmove', (e) => {
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // Mobile swipe controls
+        let touchStartX = 0;
+        let touchMoveX = 0;
+        canvas.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                touchStartX = e.touches[0].clientX;
+            }
+        }, { passive: true });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (gameOver || isAnimating || e.touches.length !== 1) return;
+            touchMoveX = e.touches[0].clientX;
+            const diff = touchMoveX - touchStartX;
+            if (Math.abs(diff) > BLOCK_SIZE) { // Use BLOCK_SIZE as threshold
+                moveCurrentBlock(diff > 0 ? 1 : -1);
+                touchStartX = touchMoveX; // Reset start position
+            }
+        }, { passive: true });
+
+
+        // --- Keyboard and Button Controls ---
         document.addEventListener('keydown', handleKeyPress);
         leftBtn.addEventListener('click', () => moveCurrentBlock(-1));
         rightBtn.addEventListener('click', () => moveCurrentBlock(1));
@@ -341,12 +416,12 @@ document.addEventListener('DOMContentLoaded', () => {
             draw(); // Redraw immediately after manual drop
         });
 
+        // --- Game State Buttons ---
         startBtn.addEventListener('click', startGame);
         restartBtnOver.addEventListener('click', startGame);
         restartBtnClear.addEventListener('click', startGame);
         
         // Don't start the game immediately, wait for the start button.
-        // Draw the empty board initially.
         drawBoard();
         drawNextBlock();
     }
