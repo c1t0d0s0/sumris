@@ -168,3 +168,44 @@ html, body {
 .game-overlay button:hover {
     background-color: var(--button-hover-bg-color);
 }
+
+@media (min-width: 768px) {
+    .game-container {
+        max-width: 600px;
+        padding: 8px;
+        gap: 8px;
+    }
+
+    .top-bar {
+        font-size: 1.2rem;
+        height: 40px;
+        padding: 0 12px;
+    }
+
+    #next-block-canvas {
+        width: 40px;
+        height: 40px;
+    }
+
+    .controls button {
+        font-size: 1.5rem;
+        padding: 8px;
+    }
+
+    .game-overlay h2 {
+        font-size: 3em;
+    }
+
+    .final-score-text {
+        font-size: 2em;
+    }
+
+    #start-screen h1 {
+        font-size: 3.5em;
+    }
+
+    .game-overlay button {
+        padding: 15px 30px;
+        font-size: 1.2em;
+    }
+}

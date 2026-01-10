@@ -35,11 +35,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let blinkingBlocks = new Set();
     let gameLoop;
     let fallSpeed = 1000; // ms
+    let isProcessingMove = false;
 
     function setAppHeight() {
         const doc = document.documentElement;
         doc.style.setProperty('--app-height', `${window.innerHeight}px`);
     }
+
 
     function resizeCanvas() {
         const gameMain = document.querySelector('.game-main');
@@ -86,54 +88,90 @@ document.addEventListener('DOMContentLoaded', () => {
         );
     }
     
-    function placeBlock() {
-        if (!currentBlock) return;
-        board[currentBlock.y][currentBlock.x] = currentBlock.number;
-        checkForClears();
-        if (gameOver) return;
-        currentBlock = nextBlock;
-        nextBlock = generateBlock();
-        
-        if (!isValidMove(currentBlock, currentBlock.x, currentBlock.y)) {
-            endGame();
-        }
+    function placeBlock(block) {
+        if (!block) {
+            isProcessingMove = false; // Failsafe to prevent the game from getting stuck
+            return;
+        };
+        board[block.y][block.x] = block.number;
+
+        handleClears().then(() => {
+            if (gameOver) return;
+
+            currentBlock = nextBlock;
+            nextBlock = generateBlock();
+
+            if (!isValidMove(currentBlock, currentBlock.x, currentBlock.y)) {
+                endGame();
+            }
+            
+            isProcessingMove = false; // All processing is done, un-lock game flow
+        });
     }
 
     function animateAndClearBlocks(blocksToClear) {
-        isAnimating = true;
-        let blinkCount = 0;
-        const totalBlinks = 4; // Must be even to end in a visible state
-        const blinkInterval = 100; // ms
+        return new Promise(resolve => {
+            isAnimating = true;
+            let blinkCount = 0;
+            const totalBlinks = 4; // Must be even to end in a visible state
+            const blinkInterval = 100; // ms
 
-        const blinker = setInterval(() => {
-            blinkCount++;
-            if (blinkingBlocks.size > 0) {
-                blinkingBlocks.clear();
-            } else {
-                blinkingBlocks = new Set(blocksToClear);
-            }
-            drawBoard();
+            const blinker = setInterval(() => {
+                blinkCount++;
+                if (blinkingBlocks.size > 0) {
+                    blinkingBlocks.clear();
+                } else {
+                    blinkingBlocks = new Set(blocksToClear);
+                }
+                drawBoard();
 
-            if (blinkCount >= totalBlinks) {
-                clearInterval(blinker);
-                blinkingBlocks.clear();
-                
-                blocksToClear.forEach(b => {
-                    const [y, x] = b.split(',').map(Number);
-                    board[y][x] = 0;
-                });
+                if (blinkCount >= totalBlinks) {
+                    clearInterval(blinker);
+                    blinkingBlocks.clear();
 
-                applyGravity();
-                checkForGameClear();
-                draw();
-                isAnimating = false;
-            }
-        }, blinkInterval);
+                    blocksToClear.forEach(b => {
+                        const [y, x] = b.split(',').map(Number);
+                        board[y][x] = 0;
+                    });
+
+                    applyGravity();
+                    draw();
+                    isAnimating = false;
+                    resolve(); // Resolve the promise when the animation and gravity are done
+                }
+            }, blinkInterval);
+        });
     }
 
-    function checkForClears() {
-        if (isAnimating) return;
-        
+    async function handleClears() {
+        let comboMultiplier = 1;
+
+        while (!gameOver) {
+            const { blocksToClear, scoreFromClear, isCrossClear } = findCompletes();
+            if (blocksToClear.size === 0) {
+                break; // No more clears, exit the loop
+            }
+
+            let currentTurnScore = scoreFromClear;
+            
+            if (isCrossClear) {
+                currentTurnScore *= 3; // Cross clears are worth more
+            }
+            if (comboMultiplier > 1) {
+                // Apply a bonus for the combo chain, making each subsequent clear more valuable
+                currentTurnScore *= (comboMultiplier * 2); 
+            }
+            
+            updateScore(currentTurnScore);
+
+            await animateAndClearBlocks(blocksToClear);
+            
+            comboMultiplier++;
+        }
+        checkForGameClear(); // Check for a full clear only after the entire chain is done
+    }
+
+    function findCompletes() {
         const verticalBlocksToClear = new Set();
         const horizontalBlocksToClear = new Set();
         let verticalScore = 0;
@@ -183,16 +221,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const intersection = new Set([...verticalBlocksToClear].filter(b => horizontalBlocksToClear.has(b)));
         const isCrossClear = intersection.size > 0;
         
-        const allBlocksToClear = new Set([...verticalBlocksToClear, ...horizontalBlocksToClear]);
-
-        if (allBlocksToClear.size > 0) {
-            let totalScoreFromClear = verticalScore + horizontalScore;
-            if (isCrossClear) {
-                totalScoreFromClear *= 3;
-            }
-            updateScore(totalScoreFromClear);
-            animateAndClearBlocks(allBlocksToClear);
-        }
+        const blocksToClear = new Set([...verticalBlocksToClear, ...horizontalBlocksToClear]);
+        const scoreFromClear = verticalScore + horizontalScore;
+        
+        return { blocksToClear, scoreFromClear, isCrossClear };
     }
     
     function applyGravity() {
@@ -275,7 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function moveCurrentBlock(dx) {
-        if (gameOver || !currentBlock || isAnimating) return;
+        if (gameOver || !currentBlock || isAnimating || isProcessingMove) return;
         const newX = currentBlock.x + dx;
         if (isValidMove(currentBlock, newX, currentBlock.y)) {
             currentBlock.x = newX;
@@ -283,17 +315,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function dropBlock() {
-        if (gameOver || !currentBlock || isAnimating) return;
+        if (gameOver || !currentBlock || isAnimating || isProcessingMove) return;
         const newY = currentBlock.y + 1;
         if (isValidMove(currentBlock, currentBlock.x, newY)) {
             currentBlock.y = newY;
         } else {
-            placeBlock();
+            isProcessingMove = true; // Lock the game
+            const blockToPlace = currentBlock;
+            currentBlock = null; // Clear current block before async operation
+            placeBlock(blockToPlace);
         }
     }
     
     function update() {
-        if (gameOver || isAnimating) return;
+        if (gameOver || isAnimating || isProcessingMove) return;
         dropBlock();
         draw();
     }
@@ -305,7 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleKeyPress(e) {
-        if (gameOver || isAnimating) return;
+        if (gameOver || isAnimating || isProcessingMove) return;
         switch (e.key) {
             case 'ArrowLeft':
                 moveCurrentBlock(-1);
@@ -321,24 +356,35 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function addInitialBlocks() {
-        for (let i = 0; i < INITIAL_BLOCK_COUNT; i++) {
-            let placed = false;
-            while (!placed) {
-                const x = Math.floor(Math.random() * COLS);
-                const y = ROWS - 1 - Math.floor(i / COLS);
-                // Find the lowest available spot in the column
-                 let targetY = ROWS -1;
-                 while(targetY >= 0 && board[targetY][x] !== 0) {
-                     targetY--;
-                 }
-                 if(targetY > ROWS - 6) { // Prevent stacking too high initially
-                    board[targetY][x] = Math.floor(Math.random() * 9) + 1;
-                    placed = true;
-                 }
+        // Try to generate a valid initial board layout up to 10 times.
+        for (let attempt = 0; attempt < 10; attempt++) {
+            // In startGame, the board is already cleared. For retries, we must clear it.
+            if (attempt > 0) {
+                 board = createEmptyBoard();
+            }
+
+            for (let i = 0; i < INITIAL_BLOCK_COUNT; i++) {
+                let placed = false;
+                let placeAttempts = 0;
+                while (!placed && placeAttempts < 100) { // Safety break for placement
+                    const x = Math.floor(Math.random() * COLS);
+                    let targetY = ROWS - 1;
+                    while (targetY >= 0 && board[targetY][x] !== 0) {
+                        targetY--;
+                    }
+                    if (targetY > ROWS - 6) { // Prevent stacking too high
+                        board[targetY][x] = Math.floor(Math.random() * 9) + 1;
+                        placed = true;
+                    }
+                    placeAttempts++;
+                }
+            }
+
+            // If the generated board has no clears, we are done.
+            if (findCompletes().blocksToClear.size === 0) {
+                return; // Exit successfully
             }
         }
-        // Ensure initial board is not in a clear state
-        checkForClears();
     }
     
     function endGame() {
@@ -349,6 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function startGame() {
         gameOver = false;
+        isProcessingMove = false;
         score = 0;
         updateScore(0);
         
