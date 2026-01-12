@@ -242,6 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function checkForGameClear() {
         const isBoardEmpty = board.every(row => row.every(cell => cell === 0));
         if (isBoardEmpty) {
+            updateScore(score); // Double the score as a bonus
             document.getElementById('final-score').textContent = score;
             gameClearScreen.style.display = 'flex';
             clearInterval(gameLoop);
