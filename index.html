@@ -3,59 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SUMRIS</title>
-    <link rel="stylesheet" href="style.css?20260109">
+    <title>SUMRIS - Math Block Puzzle</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?20260731">
 </head>
 <body>
 
     <div class="game-container">
         <div class="top-bar">
-            <span>SCORE: <span id="score">0</span></span>
-            <div class="next-container">
-                <span>NEXT:</span>
-                <canvas id="next-block-canvas"></canvas>
+            <div class="score-box">
+                <span class="label">SCORE</span>
+                <span id="score">0</span>
+            </div>
+            <div class="top-right">
+                <div class="next-container">
+                    <span class="label">NEXT</span>
+                    <canvas id="next-block-canvas"></canvas>
+                </div>
+                <button id="sound-btn" class="icon-btn" title="Sound Toggle" aria-label="Toggle Sound">🔊</button>
             </div>
         </div>
     
         <div class="game-main">
             <canvas id="game-board"></canvas>
+            <div id="floating-text-container" class="floating-text-container"></div>
+            
             <div id="game-over-screen" class="game-overlay" style="display: none;">
                 <h2>GAME OVER</h2>
-                <button id="restart-btn-over">RESTART</button>
+                <p class="final-score-text">FINAL SCORE: <span id="final-score-over">0</span></p>
+                <button id="restart-btn-over">TRY AGAIN</button>
             </div>
             <div id="game-clear-screen" class="game-overlay" style="display: none;">
                 <h2>GAME CLEAR!</h2>
                 <p class="final-score-text">FINAL SCORE: <span id="final-score">0</span></p>
-                <button id="restart-btn-clear">RESTART</button>
+                <button id="restart-btn-clear">PLAY AGAIN</button>
             </div>
             <div id="start-screen" class="game-overlay">
                 <h1>SUMRIS</h1>
-                <button id="start-btn">START</button>
+                <p class="subtitle">Match vertical or horizontal sums of 10, 20, 30...</p>
+                <button id="start-btn">START GAME</button>
             </div>
         </div>
     
         <div class="bottom-bar">
             <div class="controls">
-                <button id="left-btn">⇦</button>
-                <button id="down-btn">⇩</button>
-                <button id="right-btn">⇨</button>
+                <button id="left-btn" aria-label="Move Left">⇦</button>
+                <button id="down-btn" aria-label="Drop Down">⇩</button>
+                <button id="right-btn" aria-label="Move Right">⇨</button>
             </div>
         </div>
     </div>
 
     <script src="config.js"></script>
     <script>
-        // Dynamically create the GTM script tag
-        const gtmScript = document.createElement('script');
-        gtmScript.async = true;
-        gtmScript.src = `https://www.googletagmanager.com/gtag/js?id=${GTM_ID}`;
-        document.head.appendChild(gtmScript);
+        if (typeof GTM_ID !== 'undefined' && GTM_ID) {
+            const gtmScript = document.createElement('script');
+            gtmScript.async = true;
+            gtmScript.src = `https://www.googletagmanager.com/gtag/js?id=${GTM_ID}`;
+            document.head.appendChild(gtmScript);
 
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', GTM_ID);
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', GTM_ID);
+        }
     </script>
-    <script src="script.js?20260109"></script>
+    <script src="script.js?20260731"></script>
 </body>
 </html>
