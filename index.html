@@ -7,22 +7,24 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?20260731">
+    <link rel="stylesheet" href="style.css?20260905">
 </head>
 <body>
 
     <div class="game-container">
         <div class="top-bar">
             <div class="score-box">
-                <span class="label">SCORE</span>
+                <span class="label" data-i18n="score_label">SCORE</span>
                 <span id="score">0</span>
             </div>
             <div class="top-right">
                 <div class="next-container">
-                    <span class="label">NEXT</span>
+                    <span class="label" data-i18n="next_label">NEXT</span>
                     <canvas id="next-block-canvas"></canvas>
                 </div>
-                <button id="sound-btn" class="icon-btn" title="Sound Toggle" aria-label="Toggle Sound">🔊</button>
+                <button id="lang-btn" class="icon-btn lang-btn" title="Language" aria-label="Language">EN</button>
+                <button id="help-btn" class="icon-btn" data-i18n-title="help_title" title="How to Play" aria-label="Tutorial">❓</button>
+                <button id="sound-btn" class="icon-btn" data-i18n-title="sound_title" title="Sound Toggle" aria-label="Toggle Sound">🔊</button>
             </div>
         </div>
     
@@ -31,19 +33,160 @@
             <div id="floating-text-container" class="floating-text-container"></div>
             
             <div id="game-over-screen" class="game-overlay" style="display: none;">
-                <h2>GAME OVER</h2>
-                <p class="final-score-text">FINAL SCORE: <span id="final-score-over">0</span></p>
-                <button id="restart-btn-over">TRY AGAIN</button>
+                <h2 data-i18n="game_over">GAME OVER</h2>
+                <p class="final-score-text"><span data-i18n="final_score_label">FINAL SCORE: </span><span id="final-score-over">0</span></p>
+                <button id="restart-btn-over" data-i18n="try_again">TRY AGAIN</button>
             </div>
             <div id="game-clear-screen" class="game-overlay" style="display: none;">
-                <h2>GAME CLEAR!</h2>
-                <p class="final-score-text">FINAL SCORE: <span id="final-score">0</span></p>
-                <button id="restart-btn-clear">PLAY AGAIN</button>
+                <h2 data-i18n="game_clear">GAME CLEAR!</h2>
+                <p class="final-score-text"><span data-i18n="final_score_label">FINAL SCORE: </span><span id="final-score">0</span></p>
+                <button id="restart-btn-clear" data-i18n="play_again">PLAY AGAIN</button>
             </div>
             <div id="start-screen" class="game-overlay">
                 <h1>SUMRIS</h1>
-                <p class="subtitle">Match vertical or horizontal sums of 10, 20, 30...</p>
-                <button id="start-btn">START GAME</button>
+                <p class="subtitle" data-i18n="subtitle">Match vertical or horizontal sums of 10, 20, 30...</p>
+                <div class="start-btn-group">
+                    <button id="start-btn" data-i18n="start_game">START GAME</button>
+                    <button id="how-to-play-btn" class="secondary-btn" data-i18n="how_to_play">HOW TO PLAY</button>
+                </div>
+            </div>
+
+            <!-- Tutorial Screen -->
+            <div id="tutorial-screen" class="game-overlay tutorial-overlay" style="display: none;">
+                <div class="tutorial-card">
+                    <div class="tutorial-header">
+                        <h2 data-i18n="tut_title">HOW TO PLAY</h2>
+                        <button id="close-tutorial-btn" class="close-btn" aria-label="Close">✕</button>
+                    </div>
+
+                    <div class="tutorial-tabs">
+                        <button class="tutorial-tab active" data-tab="0" data-i18n="tab_basics">基本</button>
+                        <button class="tutorial-tab" data-tab="1" data-i18n="tab_clearing">消し方</button>
+                        <button class="tutorial-tab" data-tab="2" data-i18n="tab_bonus">ボーナス</button>
+                        <button class="tutorial-tab" data-tab="3" data-i18n="tab_controls">操作</button>
+                    </div>
+
+                    <div class="tutorial-content">
+                        <!-- Page 0: 基本 -->
+                        <div class="tutorial-page active" data-page="0">
+                            <h3 data-i18n="page0_h3">🔢 基本ルール</h3>
+                            <p class="page-desc" data-i18n="page0_desc">1から9の数字が書かれたブロックが、上からゆっくり落ちてきます。左右に動かして積み上げましょう。</p>
+                            <div class="demo-blocks-wrap">
+                                <div class="demo-blocks-label" data-i18n="page0_demo_label">数字ブロックの種類 (1〜9)</div>
+                                <div class="demo-blocks-row">
+                                    <span class="mini-block b-1">1</span>
+                                    <span class="mini-block b-2">2</span>
+                                    <span class="mini-block b-3">3</span>
+                                    <span class="mini-block b-4">4</span>
+                                    <span class="mini-block b-5">5</span>
+                                    <span class="mini-block b-6">6</span>
+                                    <span class="mini-block b-7">7</span>
+                                    <span class="mini-block b-8">8</span>
+                                    <span class="mini-block b-9">9</span>
+                                </div>
+                            </div>
+                            <div class="tutorial-hint">
+                                <span class="hint-icon">💡</span>
+                                <span data-i18n="page0_hint">画面右上の「NEXT」に次に落ちてくるブロックが表示されます。先を読んで積み方を考えましょう！</span>
+                            </div>
+                        </div>
+
+                        <!-- Page 1: 消し方 -->
+                        <div class="tutorial-page" data-page="1">
+                            <h3 data-i18n="page1_h3">💥 ブロックの消し方</h3>
+                            <p class="page-desc" data-i18n-html="page1_desc">縦または横に連続したブロックを足し算して<br><span class="highlight-cyan">「10の倍数（10, 20, 30...）」</span>になると消去！</p>
+                            
+                            <div class="tutorial-examples">
+                                <div class="example-card">
+                                    <div class="example-title" data-i18n="page1_ex1_title">縦の足し算 (合計10)</div>
+                                    <div class="math-row">
+                                        <span class="mini-block b-3">3</span>
+                                        <span class="math-op">+</span>
+                                        <span class="mini-block b-7">7</span>
+                                        <span class="math-op">=</span>
+                                        <span class="math-res success">10 ✨</span>
+                                    </div>
+                                </div>
+
+                                <div class="example-card">
+                                    <div class="example-title" data-i18n="page1_ex2_title">横の足し算 (3個以上もOK)</div>
+                                    <div class="math-row">
+                                        <span class="mini-block b-4">4</span>
+                                        <span class="math-op">+</span>
+                                        <span class="mini-block b-2">2</span>
+                                        <span class="math-op">+</span>
+                                        <span class="mini-block b-4">4</span>
+                                        <span class="math-op">=</span>
+                                        <span class="math-res success">10 ✨</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tutorial-hint">
+                                <span class="hint-icon">💡</span>
+                                <span data-i18n="page1_hint">合計が 20, 30 や 90 などの大きな10の倍数でも消去できます！</span>
+                            </div>
+                        </div>
+
+                        <!-- Page 2: ボーナス -->
+                        <div class="tutorial-page" data-page="2">
+                            <h3 data-i18n="page2_h3">⭐ スコアとクリア</h3>
+                            <div class="bonus-list">
+                                <div class="bonus-item">
+                                    <span class="bonus-badge cross" data-i18n="bonus_cross_badge">CROSS CLEAR!</span>
+                                    <p data-i18n-html="bonus_cross_desc">縦と横が交差して同時に消えるとスコア<strong>3倍</strong>！</p>
+                                </div>
+                                <div class="bonus-item">
+                                    <span class="bonus-badge combo" data-i18n="bonus_combo_badge">COMBO CHAIN!</span>
+                                    <p data-i18n="bonus_combo_desc">落下による連鎖で消えるとコンボ倍率がどんどんアップ！</p>
+                                </div>
+                                <div class="bonus-item">
+                                    <span class="bonus-badge big" data-i18n="bonus_big_badge">BIG NUMBER!</span>
+                                    <p data-i18n="bonus_big_desc">大きい合計や多くのブロックをまとめて消すほど高得点！</p>
+                                </div>
+                                <div class="bonus-item">
+                                    <span class="bonus-badge clear" data-i18n="bonus_clear_badge">GAME CLEAR!</span>
+                                    <p data-i18n-html="bonus_clear_desc">画面内のブロックをすべて消せば<strong>完全クリア</strong>＆ボーナス！</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Page 3: 操作方法 -->
+                        <div class="tutorial-page" data-page="3">
+                            <h3 data-i18n="page3_h3">🎮 操作方法</h3>
+                            <div class="ctrl-guides">
+                                <div class="ctrl-card">
+                                    <div class="ctrl-header" data-i18n="ctrl_mobile_header">📱 スマートフォン</div>
+                                    <div class="ctrl-body" data-i18n-html="ctrl_mobile_body">
+                                        <p>・画面下のボタン「⇦ ⇩ ⇨」をタップ</p>
+                                        <p>・または盤面を直接左右にスワイプ</p>
+                                    </div>
+                                </div>
+                                <div class="ctrl-card">
+                                    <div class="ctrl-header" data-i18n="ctrl_pc_header">💻 PC (キーボード)</div>
+                                    <div class="ctrl-body" data-i18n-html="ctrl_pc_body">
+                                        <p>・左右移動: <kbd>←</kbd> <kbd>→</kbd> / <kbd>A</kbd> <kbd>D</kbd></p>
+                                        <p>・すばやく落下: <kbd>↓</kbd> / <kbd>S</kbd></p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tutorial-hint">
+                                <span class="hint-icon">💡</span>
+                                <span data-i18n="page3_hint">プレイ中も右上の「❓」ボタンからいつでもルールを確認できます。</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tutorial-footer">
+                        <button id="tut-prev-btn" class="tut-nav-btn" disabled data-i18n="tut_prev">前へ</button>
+                        <div class="tutorial-dots">
+                            <span class="tut-dot active" data-index="0"></span>
+                            <span class="tut-dot" data-index="1"></span>
+                            <span class="tut-dot" data-index="2"></span>
+                            <span class="tut-dot" data-index="3"></span>
+                        </div>
+                        <button id="tut-next-btn" class="tut-nav-btn" data-i18n="tut_next">次へ</button>
+                    </div>
+                </div>
             </div>
         </div>
     
@@ -70,6 +213,6 @@
             gtag('config', GTM_ID);
         }
     </script>
-    <script src="script.js?20260731"></script>
+    <script src="script.js?20260905"></script>
 </body>
 </html>

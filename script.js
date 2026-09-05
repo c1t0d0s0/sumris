@@ -12,10 +12,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const restartBtnClear = document.getElementById('restart-btn-clear');
     const startBtn = document.getElementById('start-btn');
     const soundBtn = document.getElementById('sound-btn');
+    const helpBtn = document.getElementById('help-btn');
+    const howToPlayBtn = document.getElementById('how-to-play-btn');
+    const langBtn = document.getElementById('lang-btn');
 
     const gameOverScreen = document.getElementById('game-over-screen');
     const gameClearScreen = document.getElementById('game-clear-screen');
     const startScreen = document.getElementById('start-screen');
+    const tutorialScreen = document.getElementById('tutorial-screen');
+    const closeTutorialBtn = document.getElementById('close-tutorial-btn');
+    const tutPrevBtn = document.getElementById('tut-prev-btn');
+    const tutNextBtn = document.getElementById('tut-next-btn');
+    const tutorialTabs = document.querySelectorAll('.tutorial-tab');
+    const tutorialPages = document.querySelectorAll('.tutorial-page');
+    const tutorialDots = document.querySelectorAll('.tut-dot');
+
     const gameMainContainer = document.querySelector('.game-main');
     const floatingTextContainer = document.getElementById('floating-text-container');
     const finalScoreOver = document.getElementById('final-score-over');
@@ -54,6 +65,170 @@ document.addEventListener('DOMContentLoaded', () => {
     let lastFallTime = 0;
     let isProcessingMove = false;
     let soundEnabled = true;
+    let isTutorialOpen = false;
+    let isPaused = false;
+    let currentTutorialTab = 0;
+    let currentLang = 'ja';
+
+    // --- Internationalization (i18n) Dictionary ---
+    const I18N = {
+        ja: {
+            title: "SUMRIS - 数字ブロックパズル",
+            score_label: "SCORE",
+            next_label: "NEXT",
+            help_title: "あそびかた",
+            sound_title: "サウンド切替",
+            lang_btn: "EN",
+            lang_title: "Switch to English",
+            game_over: "GAME OVER",
+            game_clear: "GAME CLEAR!",
+            final_score_label: "FINAL SCORE: ",
+            try_again: "もう一度プレイ",
+            play_again: "もう一度プレイ",
+            subtitle: "縦か横に足して10の倍数（10, 20, 30...）を作ろう！",
+            start_game: "ゲームスタート",
+            how_to_play: "あそびかた",
+            tut_title: "HOW TO PLAY",
+            tab_basics: "基本",
+            tab_clearing: "消し方",
+            tab_bonus: "ボーナス",
+            tab_controls: "操作",
+            page0_h3: "🔢 基本ルール",
+            page0_desc: "1から9の数字が書かれたブロックが、上からゆっくり落ちてきます。左右に動かして積み上げましょう。",
+            page0_demo_label: "数字ブロックの種類 (1〜9)",
+            page0_hint: "画面右上の「NEXT」に次に落ちてくるブロックが表示されます。先を読んで積み方を考えましょう！",
+            page1_h3: "💥 ブロックの消し方",
+            page1_desc: "縦または横に連続したブロックを足し算して<br><span class=\"highlight-cyan\">「10の倍数（10, 20, 30...）」</span>になると消去！",
+            page1_ex1_title: "縦の足し算 (合計10)",
+            page1_ex2_title: "横の足し算 (3個以上もOK)",
+            page1_hint: "合計が 20, 30 や 90 などの大きな10の倍数でも消去できます！",
+            page2_h3: "⭐ スコアとクリア",
+            bonus_cross_badge: "CROSS CLEAR!",
+            bonus_cross_desc: "縦と横が交差して同時に消えるとスコア<strong>3倍</strong>！",
+            bonus_combo_badge: "COMBO CHAIN!",
+            bonus_combo_desc: "落下による連鎖で消えるとコンボ倍率がどんどんアップ！",
+            bonus_big_badge: "BIG NUMBER!",
+            bonus_big_desc: "大きい合計や多くのブロックをまとめて消すほど高得点！",
+            bonus_clear_badge: "GAME CLEAR!",
+            bonus_clear_desc: "画面内のブロックをすべて消せば<strong>完全クリア</strong>＆ボーナス！",
+            page3_h3: "🎮 操作方法",
+            ctrl_mobile_header: "📱 スマートフォン",
+            ctrl_mobile_body: "<p>・画面下のボタン「⇦ ⇩ ⇨」をタップ</p><p>・または盤面を直接左右にスワイプ</p>",
+            ctrl_pc_header: "💻 PC (キーボード)",
+            ctrl_pc_body: "<p>・左右移動: <kbd>←</kbd> <kbd>→</kbd> / <kbd>A</kbd> <kbd>D</kbd></p><p>・すばやく落下: <kbd>↓</kbd> / <kbd>S</kbd></p>",
+            page3_hint: "プレイ中も右上の「❓」ボタンからいつでもルールを確認できます。",
+            tut_prev: "前へ",
+            tut_next: "次へ",
+            tut_close: "閉じる"
+        },
+        en: {
+            title: "SUMRIS - Math Block Puzzle",
+            score_label: "SCORE",
+            next_label: "NEXT",
+            help_title: "How to Play",
+            sound_title: "Toggle Sound",
+            lang_btn: "JA",
+            lang_title: "日本語に切り替え",
+            game_over: "GAME OVER",
+            game_clear: "GAME CLEAR!",
+            final_score_label: "FINAL SCORE: ",
+            try_again: "TRY AGAIN",
+            play_again: "PLAY AGAIN",
+            subtitle: "Match vertical or horizontal sums of 10, 20, 30...",
+            start_game: "START GAME",
+            how_to_play: "HOW TO PLAY",
+            tut_title: "HOW TO PLAY",
+            tab_basics: "Basics",
+            tab_clearing: "Clearing",
+            tab_bonus: "Bonus",
+            tab_controls: "Controls",
+            page0_h3: "🔢 Basic Rules",
+            page0_desc: "Blocks with numbers from 1 to 9 fall slowly from above. Move them left and right to stack them up.",
+            page0_demo_label: "Block Numbers (1 to 9)",
+            page0_hint: "The \"NEXT\" preview at the top right shows the upcoming block. Plan your moves ahead!",
+            page1_h3: "💥 How to Clear Blocks",
+            page1_desc: "Add contiguous blocks vertically or horizontally.<br>When their sum is a <span class=\"highlight-cyan\">multiple of 10 (10, 20, 30...)</span>, they clear!",
+            page1_ex1_title: "Vertical Sum (Total 10)",
+            page1_ex2_title: "Horizontal Sum (3+ blocks work too)",
+            page1_hint: "Clearing with larger sums like 20, 30, or 90 gives massive score boosts!",
+            page2_h3: "⭐ Scores & Game Clear",
+            bonus_cross_badge: "CROSS CLEAR!",
+            bonus_cross_desc: "Clear vertical and horizontal lines simultaneously for <strong>3x score</strong>!",
+            bonus_combo_badge: "COMBO CHAIN!",
+            bonus_combo_desc: "Cascading clears from falling blocks multiply combo scores!",
+            bonus_big_badge: "BIG NUMBER!",
+            bonus_big_desc: "Higher sums (e.g. 20, 90) and more blocks award significantly more points!",
+            bonus_clear_badge: "GAME CLEAR!",
+            bonus_clear_desc: "Clear every block from the board to achieve <strong>PERFECT CLEAR</strong> & bonus!",
+            page3_h3: "🎮 Controls",
+            ctrl_mobile_header: "📱 Smartphone",
+            ctrl_mobile_body: "<p>• Tap buttons (⇦ ⇩ ⇨) at the bottom</p><p>• Or swipe left / right directly on the board</p>",
+            ctrl_pc_header: "💻 PC (Keyboard)",
+            ctrl_pc_body: "<p>• Move Left / Right: <kbd>←</kbd> <kbd>→</kbd> / <kbd>A</kbd> <kbd>D</kbd></p><p>• Soft Drop: <kbd>↓</kbd> / <kbd>S</kbd></p>",
+            page3_hint: "Tap the \"❓\" button at any time during gameplay to review the rules.",
+            tut_prev: "PREV",
+            tut_next: "NEXT",
+            tut_close: "CLOSE"
+        }
+    };
+
+    function detectBrowserLanguage() {
+        const saved = localStorage.getItem('sumris_lang');
+        if (saved === 'ja' || saved === 'en') return saved;
+
+        const navLangs = navigator.languages || [navigator.language || navigator.userLanguage || ''];
+        for (const lang of navLangs) {
+            if (lang && lang.toLowerCase().startsWith('ja')) {
+                return 'ja';
+            }
+        }
+        return 'en';
+    }
+
+    function applyLanguage(lang) {
+        currentLang = lang;
+        document.documentElement.lang = lang;
+        const texts = I18N[lang] || I18N.en;
+
+        document.title = texts.title;
+
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (texts[key]) {
+                el.textContent = texts[key];
+            }
+        });
+
+        document.querySelectorAll('[data-i18n-html]').forEach(el => {
+            const key = el.getAttribute('data-i18n-html');
+            if (texts[key]) {
+                el.innerHTML = texts[key];
+            }
+        });
+
+        document.querySelectorAll('[data-i18n-title]').forEach(el => {
+            const key = el.getAttribute('data-i18n-title');
+            if (texts[key]) {
+                el.title = texts[key];
+                el.setAttribute('aria-label', texts[key]);
+            }
+        });
+
+        if (langBtn) {
+            langBtn.textContent = texts.lang_btn;
+            langBtn.title = texts.lang_title;
+            langBtn.setAttribute('aria-label', texts.lang_title);
+        }
+
+        updateTutorialButtons();
+    }
+
+    function updateTutorialButtons() {
+        const texts = I18N[currentLang] || I18N.en;
+        tutPrevBtn.disabled = (currentTutorialTab === 0);
+        tutPrevBtn.textContent = texts.tut_prev;
+        tutNextBtn.textContent = (currentTutorialTab === tutorialTabs.length - 1) ? texts.tut_close : texts.tut_next;
+    }
 
     // --- Web Audio Synthesizer ---
     let audioCtx = null;
@@ -641,7 +816,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!lastFallTime) lastFallTime = timestamp;
             const elapsed = timestamp - lastFallTime;
 
-            if (elapsed > fallSpeed && !isAnimating && !isProcessingMove && currentBlock) {
+            if (!isPaused && !isTutorialOpen && elapsed > fallSpeed && !isAnimating && !isProcessingMove && currentBlock) {
                 dropBlock();
                 lastFallTime = timestamp;
             }
@@ -651,9 +826,74 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function handleKeyPress(e) {
-        if (gameOver || isAnimating || isProcessingMove) return;
+    // --- Tutorial Screen Management ---
+    function setTutorialTab(index) {
+        if (index < 0 || index >= tutorialTabs.length) return;
+        currentTutorialTab = index;
+
+        tutorialTabs.forEach((tab, i) => {
+            tab.classList.toggle('active', i === index);
+        });
+        tutorialPages.forEach((page, i) => {
+            page.classList.toggle('active', i === index);
+        });
+        tutorialDots.forEach((dot, i) => {
+            dot.classList.toggle('active', i === index);
+        });
+
+        updateTutorialButtons();
+        playSound('move');
+    }
+
+    function openTutorial() {
         initAudio();
+        isTutorialOpen = true;
+        // Pause active gameplay if currently in progress
+        const isGameActive = !gameOver && currentBlock &&
+            startScreen.style.display === 'none' &&
+            gameClearScreen.style.display === 'none' &&
+            gameOverScreen.style.display === 'none';
+
+        if (isGameActive) {
+            isPaused = true;
+        }
+
+        setTutorialTab(0);
+        tutorialScreen.style.display = 'flex';
+        playSound('move');
+    }
+
+    function closeTutorial() {
+        initAudio();
+        isTutorialOpen = false;
+        tutorialScreen.style.display = 'none';
+
+        if (isPaused) {
+            isPaused = false;
+            lastFallTime = performance.now();
+        }
+        playSound('move');
+    }
+
+    function handleKeyPress(e) {
+        initAudio();
+
+        if (isTutorialOpen) {
+            if (e.key === 'Escape') {
+                closeTutorial();
+            } else if (e.key === 'ArrowLeft') {
+                if (currentTutorialTab > 0) setTutorialTab(currentTutorialTab - 1);
+            } else if (e.key === 'ArrowRight' || e.key === 'Enter') {
+                if (currentTutorialTab < tutorialTabs.length - 1) {
+                    setTutorialTab(currentTutorialTab + 1);
+                } else {
+                    closeTutorial();
+                }
+            }
+            return;
+        }
+
+        if (gameOver || isAnimating || isProcessingMove || isPaused) return;
         switch (e.key) {
             case 'ArrowLeft':
             case 'a':
@@ -715,6 +955,9 @@ document.addEventListener('DOMContentLoaded', () => {
         gameOver = false;
         isProcessingMove = false;
         isAnimating = false;
+        isPaused = false;
+        isTutorialOpen = false;
+        tutorialScreen.style.display = 'none';
         score = 0;
         particles = [];
         updateScore(0);
@@ -767,7 +1010,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, { passive: true });
 
         canvas.addEventListener('touchmove', (e) => {
-            if (gameOver || isAnimating || e.touches.length !== 1) return;
+            if (isTutorialOpen || isPaused || gameOver || isAnimating || e.touches.length !== 1) return;
             touchMoveX = e.touches[0].clientX;
             const diff = touchMoveX - touchStartX;
             if (Math.abs(diff) > BLOCK_SIZE * 0.8) {
@@ -778,15 +1021,70 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Keyboard and Buttons
         document.addEventListener('keydown', handleKeyPress);
-        leftBtn.addEventListener('click', () => { initAudio(); moveCurrentBlock(-1); });
-        rightBtn.addEventListener('click', () => { initAudio(); moveCurrentBlock(1); });
-        downBtn.addEventListener('click', () => { initAudio(); dropBlock(); });
+        leftBtn.addEventListener('click', () => {
+            if (isTutorialOpen || isPaused) return;
+            initAudio();
+            moveCurrentBlock(-1);
+        });
+        rightBtn.addEventListener('click', () => {
+            if (isTutorialOpen || isPaused) return;
+            initAudio();
+            moveCurrentBlock(1);
+        });
+        downBtn.addEventListener('click', () => {
+            if (isTutorialOpen || isPaused) return;
+            initAudio();
+            dropBlock();
+        });
         soundBtn.addEventListener('click', toggleSound);
+
+        // Tutorial Event Listeners
+        helpBtn.addEventListener('click', openTutorial);
+        if (howToPlayBtn) howToPlayBtn.addEventListener('click', openTutorial);
+        closeTutorialBtn.addEventListener('click', closeTutorial);
+        tutorialScreen.addEventListener('click', (e) => {
+            if (e.target === tutorialScreen) {
+                closeTutorial();
+            }
+        });
+
+        tutorialTabs.forEach((tab, index) => {
+            tab.addEventListener('click', () => setTutorialTab(index));
+        });
+
+        tutorialDots.forEach((dot, index) => {
+            dot.addEventListener('click', () => setTutorialTab(index));
+        });
+
+        tutPrevBtn.addEventListener('click', () => {
+            if (currentTutorialTab > 0) {
+                setTutorialTab(currentTutorialTab - 1);
+            }
+        });
+
+        tutNextBtn.addEventListener('click', () => {
+            if (currentTutorialTab < tutorialTabs.length - 1) {
+                setTutorialTab(currentTutorialTab + 1);
+            } else {
+                closeTutorial();
+            }
+        });
 
         startBtn.addEventListener('click', startGame);
         restartBtnOver.addEventListener('click', startGame);
         restartBtnClear.addEventListener('click', startGame);
-        
+
+        if (langBtn) {
+            langBtn.addEventListener('click', () => {
+                const nextLang = currentLang === 'ja' ? 'en' : 'ja';
+                localStorage.setItem('sumris_lang', nextLang);
+                applyLanguage(nextLang);
+                playSound('move');
+            });
+        }
+
+        applyLanguage(detectBrowserLanguage());
+
         draw();
     }
 
