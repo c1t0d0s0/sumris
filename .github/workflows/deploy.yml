@@ -1,0 +1,57 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+concurrency:
+  group: 'pages'
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Prepare site assets
+        env:
+          GTM_ID_VAR: ${{ vars.GTM_ID }}
+          GTM_ID_SECRET: ${{ secrets.GTM_ID }}
+        run: |
+          # Inject GTM_ID from vars or secrets if configured, otherwise create a blank placeholder
+          GTM_ID="${GTM_ID_VAR:-$GTM_ID_SECRET}"
+          if [ -n "$GTM_ID" ]; then
+            echo "const GTM_ID = '$GTM_ID';" > config.js
+          elif [ ! -f config.js ]; then
+            echo "const GTM_ID = '';" > config.js
+          fi
+          # Ensure Jekyll processing is disabled
+          touch .nojekyll
+          # Remove internal development prompt file if present
+          rm -f PROMPT.txt
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

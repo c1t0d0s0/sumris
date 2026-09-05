@@ -16,6 +16,7 @@
             <div class="score-box">
                 <span class="label" data-i18n="score_label">SCORE</span>
                 <span id="score">0</span>
+                <span id="diff-badge" class="diff-badge normal">NORMAL</span>
             </div>
             <div class="top-right">
                 <div class="next-container">
@@ -34,17 +35,30 @@
             
             <div id="game-over-screen" class="game-overlay" style="display: none;">
                 <h2 data-i18n="game_over">GAME OVER</h2>
+                <p class="result-diff-text"><span data-i18n="difficulty_label">DIFFICULTY: </span><span id="result-diff-over" class="diff-name">NORMAL</span></p>
                 <p class="final-score-text"><span data-i18n="final_score_label">FINAL SCORE: </span><span id="final-score-over">0</span></p>
                 <button id="restart-btn-over" data-i18n="try_again">TRY AGAIN</button>
             </div>
             <div id="game-clear-screen" class="game-overlay" style="display: none;">
                 <h2 data-i18n="game_clear">GAME CLEAR!</h2>
+                <p class="result-diff-text"><span data-i18n="difficulty_label">DIFFICULTY: </span><span id="result-diff-clear" class="diff-name">NORMAL</span></p>
                 <p class="final-score-text"><span data-i18n="final_score_label">FINAL SCORE: </span><span id="final-score">0</span></p>
                 <button id="restart-btn-clear" data-i18n="play_again">PLAY AGAIN</button>
             </div>
             <div id="start-screen" class="game-overlay">
                 <h1>SUMRIS</h1>
                 <p class="subtitle" data-i18n="subtitle">Match vertical or horizontal sums of 10, 20, 30...</p>
+                
+                <div class="diff-section">
+                    <div class="diff-label" data-i18n="select_difficulty">DIFFICULTY</div>
+                    <div class="diff-buttons">
+                        <button type="button" class="diff-btn" data-diff="easy" data-i18n="diff_easy">EASY</button>
+                        <button type="button" class="diff-btn active" data-diff="normal" data-i18n="diff_normal">NORMAL</button>
+                        <button type="button" class="diff-btn" data-diff="hard" data-i18n="diff_hard">HARD</button>
+                    </div>
+                    <div id="diff-desc" class="diff-desc"></div>
+                </div>
+
                 <div class="start-btn-group">
                     <button id="start-btn" data-i18n="start_game">START GAME</button>
                     <button id="how-to-play-btn" class="secondary-btn" data-i18n="how_to_play">HOW TO PLAY</button>

@@ -70,6 +70,31 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentTutorialTab = 0;
     let currentLang = 'ja';
 
+    // --- Difficulty Configurations ---
+    const DIFFICULTY_CONFIG = {
+        easy: {
+            fallSpeed: 1200,
+            initialBlocks: 5,
+            scoreMultiplier: 1.0,
+            colorClass: 'easy'
+        },
+        normal: {
+            fallSpeed: 850,
+            initialBlocks: 7,
+            scoreMultiplier: 1.5,
+            colorClass: 'normal'
+        },
+        hard: {
+            fallSpeed: 500,
+            initialBlocks: 12,
+            scoreMultiplier: 2.0,
+            colorClass: 'hard'
+        }
+    };
+
+    let currentDifficulty = localStorage.getItem('sumris_difficulty') || 'normal';
+    if (!DIFFICULTY_CONFIG[currentDifficulty]) currentDifficulty = 'normal';
+
     // --- Internationalization (i18n) Dictionary ---
     const I18N = {
         ja: {
@@ -80,6 +105,14 @@ document.addEventListener('DOMContentLoaded', () => {
             sound_title: "サウンド切替",
             lang_btn: "EN",
             lang_title: "Switch to English",
+            difficulty_label: "難易度: ",
+            select_difficulty: "難易度選択",
+            diff_easy: "EASY",
+            diff_normal: "NORMAL",
+            diff_hard: "HARD",
+            diff_desc_easy: "速度: 遅い (1.2s) | 初期配置: 5個 | スコア: 1.0倍<br>初心者向け。じっくり考えて足し算を楽しめます。",
+            diff_desc_normal: "速度: 標準 (0.85s) | 初期配置: 7個 | スコア: 1.5倍<br>標準モード。スピードと計算のバランスが良い設定です。",
+            diff_desc_hard: "速度: 高速 (0.5s) | 初期配置: 12個 | スコア: 2.0倍<br>上級者向け！素早い判断と連鎖でハイスコアを目指そう！",
             game_over: "GAME OVER",
             game_clear: "GAME CLEAR!",
             final_score_label: "FINAL SCORE: ",
@@ -129,6 +162,14 @@ document.addEventListener('DOMContentLoaded', () => {
             sound_title: "Toggle Sound",
             lang_btn: "JA",
             lang_title: "日本語に切り替え",
+            difficulty_label: "DIFFICULTY: ",
+            select_difficulty: "DIFFICULTY",
+            diff_easy: "EASY",
+            diff_normal: "NORMAL",
+            diff_hard: "HARD",
+            diff_desc_easy: "Speed: Slow (1.2s) | Initial: 5 | Score: 1.0x<br>Relaxed pace. Take your time to calculate sums.",
+            diff_desc_normal: "Speed: Normal (0.85s) | Initial: 7 | Score: 1.5x<br>Balanced mode. Great balance of speed & strategy.",
+            diff_desc_hard: "Speed: Fast (0.5s) | Initial: 12 | Score: 2.0x<br>Fast & challenging! High risk and double score bonus!",
             game_over: "GAME OVER",
             game_clear: "GAME CLEAR!",
             final_score_label: "FINAL SCORE: ",
@@ -171,6 +212,51 @@ document.addEventListener('DOMContentLoaded', () => {
             tut_close: "CLOSE"
         }
     };
+
+    function updateDifficultyUI() {
+        const texts = I18N[currentLang] || I18N.en;
+        const diffName = texts['diff_' + currentDifficulty] || currentDifficulty.toUpperCase();
+
+        const diffButtons = document.querySelectorAll('.diff-btn');
+        diffButtons.forEach(btn => {
+            if (btn.getAttribute('data-diff') === currentDifficulty) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        const diffBadge = document.getElementById('diff-badge');
+        if (diffBadge) {
+            diffBadge.textContent = diffName;
+            diffBadge.className = `diff-badge ${currentDifficulty}`;
+        }
+
+        const diffDesc = document.getElementById('diff-desc');
+        if (diffDesc) {
+            diffDesc.innerHTML = texts['diff_desc_' + currentDifficulty] || '';
+        }
+
+        const resultDiffOver = document.getElementById('result-diff-over');
+        if (resultDiffOver) {
+            resultDiffOver.textContent = diffName;
+            resultDiffOver.className = `diff-name ${currentDifficulty}`;
+        }
+
+        const resultDiffClear = document.getElementById('result-diff-clear');
+        if (resultDiffClear) {
+            resultDiffClear.textContent = diffName;
+            resultDiffClear.className = `diff-name ${currentDifficulty}`;
+        }
+    }
+
+    function setDifficulty(diff, playSfx = true) {
+        if (!DIFFICULTY_CONFIG[diff]) return;
+        currentDifficulty = diff;
+        localStorage.setItem('sumris_difficulty', diff);
+        updateDifficultyUI();
+        if (playSfx) playSound('move');
+    }
 
     function detectBrowserLanguage() {
         const saved = localStorage.getItem('sumris_lang');
@@ -221,6 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         updateTutorialButtons();
+        updateDifficultyUI();
     }
 
     function updateTutorialButtons() {
@@ -551,6 +638,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (comboMultiplier > 1) {
                 currentTurnScore *= (comboMultiplier * 2); 
             }
+
+            const diffConfig = DIFFICULTY_CONFIG[currentDifficulty] || DIFFICULTY_CONFIG.normal;
+            currentTurnScore = Math.round(currentTurnScore * diffConfig.scoreMultiplier);
             
             updateScore(currentTurnScore);
 
@@ -634,6 +724,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isBoardEmpty) {
             updateScore(score);
             finalScoreClear.textContent = score;
+            updateDifficultyUI();
             gameClearScreen.style.display = 'flex';
             playSound('clearall');
             gameOver = true;
@@ -914,12 +1005,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function addInitialBlocks() {
+        const diffConfig = DIFFICULTY_CONFIG[currentDifficulty] || DIFFICULTY_CONFIG.normal;
+        const initialCount = diffConfig.initialBlocks;
+        const maxRowHeight = currentDifficulty === 'hard' ? ROWS - 7 : ROWS - 5;
+
         for (let attempt = 0; attempt < 10; attempt++) {
             if (attempt > 0) {
                 board = createEmptyBoard();
             }
 
-            for (let i = 0; i < INITIAL_BLOCK_COUNT; i++) {
+            for (let i = 0; i < initialCount; i++) {
                 let placed = false;
                 let placeAttempts = 0;
                 while (!placed && placeAttempts < 100) {
@@ -928,7 +1023,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     while (targetY >= 0 && board[targetY][x] !== 0) {
                         targetY--;
                     }
-                    if (targetY > ROWS - 5) {
+                    if (targetY > maxRowHeight) {
                         board[targetY][x] = Math.floor(Math.random() * 9) + 1;
                         placed = true;
                     }
@@ -946,6 +1041,7 @@ document.addEventListener('DOMContentLoaded', () => {
         gameOver = true;
         if (animFrameReq) cancelAnimationFrame(animFrameReq);
         finalScoreOver.textContent = score;
+        updateDifficultyUI();
         gameOverScreen.style.display = 'flex';
         playSound('gameover');
     }
@@ -962,6 +1058,10 @@ document.addEventListener('DOMContentLoaded', () => {
         particles = [];
         updateScore(0);
         
+        const diffConfig = DIFFICULTY_CONFIG[currentDifficulty] || DIFFICULTY_CONFIG.normal;
+        fallSpeed = diffConfig.fallSpeed;
+        updateDifficultyUI();
+
         gameOverScreen.style.display = 'none';
         gameClearScreen.style.display = 'none';
         startScreen.style.display = 'none';
@@ -1038,6 +1138,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         soundBtn.addEventListener('click', toggleSound);
 
+        // Difficulty Selection Buttons
+        document.querySelectorAll('.diff-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                initAudio();
+                const diff = e.currentTarget.getAttribute('data-diff');
+                if (diff) {
+                    setDifficulty(diff, true);
+                }
+            });
+        });
+
         // Tutorial Event Listeners
         helpBtn.addEventListener('click', openTutorial);
         if (howToPlayBtn) howToPlayBtn.addEventListener('click', openTutorial);
@@ -1084,6 +1195,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         applyLanguage(detectBrowserLanguage());
+        updateDifficultyUI();
 
         draw();
     }
