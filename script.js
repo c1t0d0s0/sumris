@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
         { main: '#00FFCC', top: '#66FFDD', border: '#00CC99', shadow: 'rgba(0, 255, 204, 0.4)' }  // 9: Aqua Mint
     ];
 
-    let board = [];
+    let board = createEmptyBoard();
     let currentBlock = null;
     let nextBlock = null;
     let score = 0;
@@ -845,7 +845,10 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         drawGridLines();
 
+        if (!board || board.length !== ROWS) return;
+
         for (let y = 0; y < ROWS; y++) {
+            if (!board[y]) continue;
             for (let x = 0; x < COLS; x++) {
                 if (board[y][x] > 0) {
                     const number = board[y][x];
@@ -1086,6 +1089,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function init() {
+        board = createEmptyBoard();
         window.addEventListener('resize', () => {
             setAppHeight();
             resizeCanvas();
