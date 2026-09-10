@@ -122,6 +122,7 @@ sumris/
 ├── index.html           # Main markup, overlays & UI structure
 ├── style.css            # Cyberpunk dark neon UI & animations
 ├── script.js            # Game engine, audio synthesizer & i18n
+├── favicon.ico          # Multi-resolution favicon icon
 ├── LICENSE              # MIT License
 ├── README.md            # English documentation
 └── README.ja.md         # Japanese documentation

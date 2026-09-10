@@ -124,6 +124,7 @@ sumris/
 ├── index.html           # ゲーム画面のHTML骨格とオーバーレイ構造
 ├── style.css            # ネオンサイバーパンク調のスタイル定義
 ├── script.js            # パズル判定、シンセサウンド、多言語辞書
+├── favicon.ico          # マルチ解像度ファビコン
 ├── LICENSE              # MIT ライセンス
 ├── README.md            # 英語版ドキュメント
 └── README.ja.md         # 日本語版ドキュメント
