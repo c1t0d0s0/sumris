@@ -85,10 +85,15 @@ No build steps or package managers required. Simply open the files in your brows
 ### Optional: Analytics Configuration
 
 To enable Google Tag Manager / Google Analytics:
-Create a file named `config.js` in the root directory:
-```javascript
-const GTM_ID = 'G-XXXXXXXXXX';
+Copy `config.example.js` to `config.js` in the root directory:
+```bash
+cp config.example.js config.js
 ```
+```javascript
+const GTM_ID = 'G-XXXXXXXXXX';   // Google Analytics (gtag.js)
+// const GTM_ID = 'GTM-XXXXXXX'; // Google Tag Manager
+```
+IDs starting with `GTM-` embed the Google Tag Manager snippet; any other ID (e.g. `G-`) embeds the Google Analytics gtag.js snippet.
 *(Note: `config.js` is ignored in `.gitignore` by default).*
 
 ---
@@ -108,7 +113,7 @@ git push origin v1.0.0
 
 > **Repository Setup Note**:
 > Ensure GitHub Pages is configured to build from **GitHub Actions** under repository **Settings > Pages > Build and deployment > Source**.
-> If you have a Google Analytics ID, add it as a repository variable (`vars.GTM_ID`) or secret (`secrets.GTM_ID`) named `GTM_ID`.
+> If you have a Google Analytics ID (`G-...`) or Google Tag Manager ID (`GTM-...`), add it as a repository variable (`vars.GTM_ID`) or secret (`secrets.GTM_ID`) named `GTM_ID`.
 
 ---
 
@@ -123,6 +128,7 @@ sumris/
 ├── style.css            # Cyberpunk dark neon UI & animations
 ├── script.js            # Game engine, audio synthesizer & i18n
 ├── favicon.ico          # Multi-resolution favicon icon
+├── config.example.js    # Example config.js (analytics ID)
 ├── LICENSE              # MIT License
 ├── README.md            # English documentation
 └── README.ja.md         # Japanese documentation

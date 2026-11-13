@@ -32,7 +32,8 @@ jobs:
           GTM_ID_VAR: ${{ vars.GTM_ID }}
           GTM_ID_SECRET: ${{ secrets.GTM_ID }}
         run: |
-          # Inject GTM_ID from vars or secrets if configured, otherwise create a blank placeholder
+          # Inject GTM_ID from vars or secrets if configured, otherwise create a blank placeholder.
+          # 'G-...' embeds Google Analytics (gtag.js); 'GTM-...' embeds Google Tag Manager (see index.html).
           GTM_ID="${GTM_ID_VAR:-$GTM_ID_SECRET}"
           if [ -n "$GTM_ID" ]; then
             echo "const GTM_ID = '$GTM_ID';" > config.js
@@ -43,6 +44,8 @@ jobs:
           touch .nojekyll
           # Remove internal development prompt file if present
           rm -f PROMPT.txt
+          # Example config is not needed on the deployed site
+          rm -f config.example.js
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

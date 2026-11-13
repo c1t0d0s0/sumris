@@ -86,11 +86,16 @@ python3 -m http.server 8000
 
 ※ または、`index.html` を直接ダブルクリックしてブラウザで開くだけでもプレイ可能です。
 
-### (任意) Google アナリティクス等の設定
-アクセス解析を行いたい場合は、プロジェクトルートに `config.js` を作成します:
-```javascript
-const GTM_ID = 'G-XXXXXXXXXX';
+### (任意) Google アナリティクス / Google タグマネージャーの設定
+アクセス解析を行いたい場合は、`config.example.js` をコピーしてプロジェクトルートに `config.js` を作成します:
+```bash
+cp config.example.js config.js
 ```
+```javascript
+const GTM_ID = 'G-XXXXXXXXXX';   // Google アナリティクス (gtag.js)
+// const GTM_ID = 'GTM-XXXXXXX'; // Google タグマネージャー
+```
+`GTM-` で始まる ID の場合は Google タグマネージャーのタグが、それ以外 (`G-` など) の場合は Google アナリティクスのタグが埋め込まれます。
 *(※ `config.js` は `.gitignore` により Git 管理から除外されています)*
 
 ---
@@ -110,7 +115,7 @@ git push origin v1.0.0
 
 > **リポジトリ設定の事前確認**:
 > GitHub リポジトリの **Settings > Pages > Build and deployment > Source** を **`GitHub Actions`** に設定してください。
-> Google アナリティクス ID を使用する場合は、リポジトリの Variables (`vars.GTM_ID`) または Secrets (`secrets.GTM_ID`) に `GTM_ID` を登録すると自動で反映されます。
+> Google アナリティクス ID (`G-...`) または Google タグマネージャー ID (`GTM-...`) を使用する場合は、リポジトリの Variables (`vars.GTM_ID`) または Secrets (`secrets.GTM_ID`) に `GTM_ID` を登録すると自動で反映されます。
 
 ---
 
@@ -125,6 +130,7 @@ sumris/
 ├── style.css            # ネオンサイバーパンク調のスタイル定義
 ├── script.js            # パズル判定、シンセサウンド、多言語辞書
 ├── favicon.ico          # マルチ解像度ファビコン
+├── config.example.js    # config.js の設定例 (アナリティクス ID)
 ├── LICENSE              # MIT ライセンス
 ├── README.md            # 英語版ドキュメント
 └── README.ja.md         # 日本語版ドキュメント

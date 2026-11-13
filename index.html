@@ -216,7 +216,16 @@
 
     <script src="config.js"></script>
     <script>
-        if (typeof GTM_ID !== 'undefined' && GTM_ID) {
+        if (typeof GTM_ID !== 'undefined' && /^GTM-[A-Z0-9]+$/i.test(GTM_ID)) {
+            // Google Tag Manager (GTM-XXXXXXX)
+            window.dataLayer = window.dataLayer || [];
+            window.dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
+            const gtmScript = document.createElement('script');
+            gtmScript.async = true;
+            gtmScript.src = `https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(GTM_ID)}`;
+            document.head.appendChild(gtmScript);
+        } else if (typeof GTM_ID !== 'undefined' && GTM_ID) {
+            // Google Analytics / gtag.js (G-XXXXXXXXXX)
             const gtmScript = document.createElement('script');
             gtmScript.async = true;
             gtmScript.src = `https://www.googletagmanager.com/gtag/js?id=${GTM_ID}`;
